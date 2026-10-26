@@ -10,7 +10,6 @@ import { downloadFiles, type DownloadItem } from "@/lib/download";
 import {
   deleteTemp,
   readOutput,
-  removeInput,
   runFFmpeg,
   safeInputName,
   writeInputOnce,
@@ -189,6 +188,3 @@ export function TrimTool({ file, fileUrl, duration }: Props) {
     </div>
   );
 }
-
-// Keep the import used in dev-only paths referenced above.
-void removeInput;

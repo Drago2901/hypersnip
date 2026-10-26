@@ -58,8 +58,11 @@ export function CompileTool({ file, fileUrl, duration }: Props) {
     setSegments((prev) => {
       const next = [...prev];
       const target = index + dir;
-      if (target < 0 || target >= next.length) return prev;
-      [next[index], next[target]] = [next[target], next[index]];
+      const a = next[index];
+      const b = next[target];
+      if (target < 0 || target >= next.length || !a || !b) return prev;
+      next[index] = b;
+      next[target] = a;
       return next;
     });
 
@@ -74,6 +77,7 @@ export function CompileTool({ file, fileUrl, duration }: Props) {
       const listLines: string[] = [];
       for (let i = 0; i < segments.length; i++) {
         const seg = segments[i];
+        if (!seg) continue;
         setStage(`Cutting clip ${i + 1} of ${segments.length}…`);
         const segName = `seg-${i}.mp4`;
         tempNames.push(segName);
