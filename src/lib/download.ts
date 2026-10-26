@@ -25,8 +25,10 @@ function triggerDownload(blob: Blob, filename: string): void {
  */
 export async function downloadFiles(items: DownloadItem[], zipName: string): Promise<void> {
   if (items.length === 0) return;
+  const first = items[0];
+  if (!first) return;
   if (items.length === 1) {
-    triggerDownload(toBlob(items[0]), items[0].name);
+    triggerDownload(toBlob(first), first.name);
     return;
   }
   const entries: Record<string, [Uint8Array, { level: 0 }]> = {};
