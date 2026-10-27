@@ -171,7 +171,7 @@ export function extractFeatures(
 
     const re = new Float32Array(fftSize);
     const im = new Float32Array(fftSize);
-    for (let i = 0; i < frameLen; i++) re[i] = (samples[off + i] ?? 0) * windowFn[i];
+    for (let i = 0; i < frameLen; i++) re[i] = (samples[off + i] ?? 0) * windowFn[i]!;
     fft(re, im);
     let num = 0;
     let den = 0;

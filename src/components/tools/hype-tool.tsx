@@ -216,7 +216,7 @@ export function HypeTool({ file, fileUrl, duration }: Props) {
       ensureWorker().postMessage(
         {
           type: "analyze",
-          samples: samples.buffer,
+          samples: toArrayBuffer(samples),
           sampleRate: SAMPLE_RATE,
           mode,
           targetDuration,
