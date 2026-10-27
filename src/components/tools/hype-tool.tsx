@@ -51,6 +51,11 @@ function toFloat32(bytes: Uint8Array, sampleCount: number): Float32Array {
   return out;
 }
 
+/** Plain ArrayBuffer copy, safe to transfer to the worker. */
+function toArrayBuffer(view: Float32Array): ArrayBuffer {
+  return view.buffer.slice(view.byteOffset, view.byteOffset + view.byteLength) as ArrayBuffer;
+}
+
 export function HypeTool({ file, fileUrl, duration }: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const workerRef = useRef<Worker | null>(null);
