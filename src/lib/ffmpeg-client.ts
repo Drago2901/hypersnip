@@ -7,9 +7,12 @@ import { sanitizeInputName } from "./format";
  * Shared, lazily-loaded FFmpeg.wasm client. Everything runs in the browser —
  * media files are never uploaded anywhere. The single-threaded core is used,
  * so no SharedArrayBuffer / cross-origin isolation is required.
+ *
+ * Note: @ffmpeg/ffmpeg spawns a module worker, where importScripts() is
+ * unavailable — so the core must be the ESM build loaded by URL (CORS is
+ * enabled on both CDNs), not a blobified UMD script.
  */
 const CORE_VERSION = "0.12.6";
-const FFMPEG_VERSION = "0.12.15";
 const CDNS = ["https://unpkg.com", "https://cdn.jsdelivr.net/npm"];
 
 let ffmpeg: FFmpeg | null = null;
@@ -20,19 +23,17 @@ export async function getFFmpeg(): Promise<FFmpeg> {
   if (ffmpeg) return ffmpeg;
   if (loading) return loading;
   loading = (async () => {
-    const instance = new FFmpeg();
     let lastError: unknown = null;
     for (const cdn of CDNS) {
       try {
-        const coreBase = `${cdn}/@ffmpeg/core@${CORE_VERSION}/dist/umd`;
-        const workerURL = await toBlobURL(
-          `${cdn}/@ffmpeg/ffmpeg@${FFMPEG_VERSION}/dist/umd/814.ffmpeg.js`,
-          "text/javascript",
-        );
+        const coreBase = `${cdn}/@ffmpeg/core@${CORE_VERSION}/dist/esm`;
+        const instance = new FFmpeg();
         await instance.load({
-          coreURL: await toBlobURL(`${coreBase}/ffmpeg-core.js`, "text/javascript"),
-          wasmURL: await toBlobURL(`${coreBase}/ffmpeg-core.wasm`, "application/wasm"),
-          workerURL,
+          coreURL: `${coreBase}/ffmpeg-core.js`,
+          wasmURL: await toBlobURL(
+            `${cdn}/@ffmpeg/core@${CORE_VERSION}/dist/umd/ffmpeg-core.wasm`,
+            "application/wasm",
+          ),
         });
         ffmpeg = instance;
         return instance;
