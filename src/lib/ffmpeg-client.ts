@@ -13,7 +13,6 @@ import { sanitizeInputName } from "./format";
  * enabled on both CDNs), not a blobified UMD script.
  */
 const CORE_VERSION = "0.12.6";
-const FFMPEG_VERSION = "0.12.15";
 const CDNS = ["https://unpkg.com", "https://cdn.jsdelivr.net/npm"];
 
 let ffmpeg: FFmpeg | null = null;
