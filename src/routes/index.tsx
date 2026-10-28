@@ -91,7 +91,7 @@ function Index() {
               <Scissors className="h-4 w-4" />
             </div>
             <span className="text-lg font-bold tracking-tight text-foreground">
-              Snip<span className="text-primary">30</span>
+              Hyper<span className="text-primary">Snip</span>
             </span>
           </div>
           <div className="flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5">
