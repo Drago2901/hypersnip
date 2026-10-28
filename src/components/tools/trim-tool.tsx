@@ -8,12 +8,16 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { downloadFiles, type DownloadItem } from "@/lib/download";
 import {
+  abortFFmpeg,
   deleteTemp,
+  FFmpegCancelledError,
+  looksLikeMp4,
   readOutput,
   runFFmpeg,
   safeInputName,
   writeInputOnce,
 } from "@/lib/ffmpeg-client";
+import { useEngineBusy } from "@/hooks/use-engine-busy";
 import { formatTimecode } from "@/lib/format";
 
 type Props = { file: File; fileUrl: string; duration: number | null };
