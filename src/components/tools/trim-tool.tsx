@@ -8,12 +8,16 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { downloadFiles, type DownloadItem } from "@/lib/download";
 import {
+  abortFFmpeg,
   deleteTemp,
+  FFmpegCancelledError,
+  looksLikeMp4,
   readOutput,
   runFFmpeg,
   safeInputName,
   writeInputOnce,
 } from "@/lib/ffmpeg-client";
+import { useEngineBusy } from "@/hooks/use-engine-busy";
 import { formatTimecode } from "@/lib/format";
 
 type Props = { file: File; fileUrl: string; duration: number | null };
@@ -30,7 +34,19 @@ export function TrimTool({ file, fileUrl, duration }: Props) {
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<{ url: string; blob: Blob; name: string } | null>(null);
+  const engineBusy = useEngineBusy();
   const inputName = safeInputName(file);
+
+  // A new video starts from clean state — stale points and old results would
+  // otherwise produce clips of the wrong file.
+  useEffect(() => {
+    setStart(0);
+    setEnd(0);
+    setResult((prev) => {
+      if (prev) URL.revokeObjectURL(prev.url);
+      return null;
+    });
+  }, [file]);
 
   const outputDuration = Math.max(0, end - start);
   const valid = outputDuration >= 0.5 && (!duration || end <= duration + 0.05);
@@ -79,6 +95,11 @@ export function TrimTool({ file, fileUrl, duration }: Props) {
         setProgress,
       );
       const data = await readOutput(outName);
+      if (!looksLikeMp4(data)) {
+        throw new Error(
+          "The export came out damaged. Please try again — if it keeps happening, try a different file.",
+        );
+      }
       const blob = new Blob([data as unknown as BlobPart], { type: "video/mp4" });
       const base = file.name.replace(/\.[^.]+$/, "").replace(/[^\w-]+/g, "-").slice(0, 60) || "clip";
       const name = `${base}-trim.mp4`;
@@ -86,10 +107,14 @@ export function TrimTool({ file, fileUrl, duration }: Props) {
       await deleteTemp(outName);
       toast.success("Clip ready — download it below.");
     } catch (error) {
-      console.error(error);
-      toast.error(
-        error instanceof Error ? error.message : "Something went wrong while cutting the clip.",
-      );
+      if (error instanceof FFmpegCancelledError) {
+        toast.message("Cancelled.");
+      } else {
+        console.error(error);
+        toast.error(
+          error instanceof Error ? error.message : "Something went wrong while cutting the clip.",
+        );
+      }
     } finally {
       setBusy(false);
     }
@@ -157,6 +182,9 @@ export function TrimTool({ file, fileUrl, duration }: Props) {
               <Loader2 className="h-4 w-4 animate-spin" /> Cutting clip… {Math.round(progress * 100)}%
             </div>
             <Progress value={progress * 100} />
+            <Button variant="secondary" className="w-full" onClick={() => abortFFmpeg()}>
+              Cancel
+            </Button>
           </div>
         )}
 
@@ -179,10 +207,17 @@ export function TrimTool({ file, fileUrl, duration }: Props) {
             </div>
           </div>
         ) : (
-          <Button className="w-full" size="lg" onClick={exportClip} disabled={busy || !valid}>
-            <Scissors className="h-4 w-4" />
-            {busy ? "Cutting…" : "Cut clip"}
-          </Button>
+          <>
+            {engineBusy && (
+              <p className="text-center text-xs text-muted-foreground">
+                The video engine is busy with another tool — try again in a moment.
+              </p>
+            )}
+            <Button className="w-full" size="lg" onClick={exportClip} disabled={busy || !valid || engineBusy}>
+              <Scissors className="h-4 w-4" />
+              {busy ? "Cutting…" : "Cut clip"}
+            </Button>
+          </>
         )}
       </div>
     </div>
