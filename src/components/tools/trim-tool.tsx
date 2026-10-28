@@ -34,7 +34,19 @@ export function TrimTool({ file, fileUrl, duration }: Props) {
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<{ url: string; blob: Blob; name: string } | null>(null);
+  const engineBusy = useEngineBusy();
   const inputName = safeInputName(file);
+
+  // A new video starts from clean state — stale points and old results would
+  // otherwise produce clips of the wrong file.
+  useEffect(() => {
+    setStart(0);
+    setEnd(0);
+    setResult((prev) => {
+      if (prev) URL.revokeObjectURL(prev.url);
+      return null;
+    });
+  }, [file]);
 
   const outputDuration = Math.max(0, end - start);
   const valid = outputDuration >= 0.5 && (!duration || end <= duration + 0.05);
