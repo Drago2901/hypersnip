@@ -168,7 +168,7 @@ export function TrimTool({ file, fileUrl, duration }: Props) {
               <Button
                 className="flex-1"
                 onClick={() =>
-                  downloadFiles([{ name: result.name, data: result.blob }], "snip30.zip")
+                  downloadFiles([{ name: result.name, data: result.blob }], "hypersnip.zip")
                 }
               >
                 <Download className="h-4 w-4" /> Download MP4

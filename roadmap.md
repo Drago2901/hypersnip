@@ -1,4 +1,4 @@
-# Snip30 — Roadmap
+# HyperSnip — Roadmap
 
 ## M1 — Foundation
 - [x] Install deps (@ffmpeg/ffmpeg, @ffmpeg/util, fflate)
