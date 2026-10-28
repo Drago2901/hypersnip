@@ -19,13 +19,13 @@ const TOOLS: { id: ToolId; label: string; icon: typeof Scissors; blurb: string }
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Snip30 — Trim, Compile & Hype Intro, right in your browser" },
+      { title: "HyperSnip — Trim, Compile & Hype Intro, right in your browser" },
       {
         name: "description",
         content:
           "Drop in a video to trim clips, stitch compilations, or auto-generate a hype intro from its audio. Everything runs locally — nothing is uploaded.",
       },
-      { property: "og:title", content: "Snip30 — browser-based video toolkit" },
+      { property: "og:title", content: "HyperSnip — browser-based video toolkit" },
       {
         property: "og:description",
         content:
@@ -91,7 +91,7 @@ function Index() {
               <Scissors className="h-4 w-4" />
             </div>
             <span className="text-lg font-bold tracking-tight text-foreground">
-              Snip<span className="text-primary">30</span>
+              Hyper<span className="text-primary">Snip</span>
             </span>
           </div>
           <div className="flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5">
@@ -112,7 +112,7 @@ function Index() {
               <span className="text-primary">Zero upload.</span>
             </h1>
             <p className="mt-4 text-center text-base text-muted-foreground">
-              Trim, compile, or let Snip30 find the most exciting moments from the audio —
+              Trim, compile, or let HyperSnip find the most exciting moments from the audio —
               all inside your browser.
             </p>
             <div className="mt-8">

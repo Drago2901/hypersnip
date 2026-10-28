@@ -79,14 +79,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Snip30 — Trim, Compile & Hype Intro, right in your browser" },
+      { title: "HyperSnip — Trim, Compile & Hype Intro, right in your browser" },
       {
         name: "description",
         content:
           "Cut clips, stitch compilations and auto-generate hype intros from any video. Everything is processed locally in your browser — nothing is uploaded.",
       },
-      { name: "author", content: "Snip30" },
-      { property: "og:title", content: "Snip30 — Trim, Compile & Hype Intro" },
+      { name: "author", content: "HyperSnip" },
+      { property: "og:title", content: "HyperSnip — Trim, Compile & Hype Intro" },
       {
         property: "og:description",
         content:

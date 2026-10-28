@@ -412,7 +412,7 @@ export function HypeTool({ file, fileUrl, duration }: Props) {
         <div className="rounded-xl border border-border bg-card p-4">
           <p className="micro-label">Hype Intro</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Snip30 listens to the audio and cuts the most exciting moments. Everything is analyzed
+            HyperSnip listens to the audio and cuts the most exciting moments. Everything is analyzed
             on your device.
           </p>
 
@@ -597,7 +597,7 @@ export function HypeTool({ file, fileUrl, duration }: Props) {
             <div className="flex gap-2">
               <Button
                 className="flex-1"
-                onClick={() => downloadFiles([{ name: result.name, data: result.blob }], "snip30.zip")}
+                onClick={() => downloadFiles([{ name: result.name, data: result.blob }], "hypersnip.zip")}
               >
                 <Download className="h-4 w-4" /> Download MP4
               </Button>
