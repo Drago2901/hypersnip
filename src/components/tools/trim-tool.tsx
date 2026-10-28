@@ -95,6 +95,11 @@ export function TrimTool({ file, fileUrl, duration }: Props) {
         setProgress,
       );
       const data = await readOutput(outName);
+      if (!looksLikeMp4(data)) {
+        throw new Error(
+          "The export came out damaged. Please try again — if it keeps happening, try a different file.",
+        );
+      }
       const blob = new Blob([data as unknown as BlobPart], { type: "video/mp4" });
       const base = file.name.replace(/\.[^.]+$/, "").replace(/[^\w-]+/g, "-").slice(0, 60) || "clip";
       const name = `${base}-trim.mp4`;
@@ -102,10 +107,14 @@ export function TrimTool({ file, fileUrl, duration }: Props) {
       await deleteTemp(outName);
       toast.success("Clip ready — download it below.");
     } catch (error) {
-      console.error(error);
-      toast.error(
-        error instanceof Error ? error.message : "Something went wrong while cutting the clip.",
-      );
+      if (error instanceof FFmpegCancelledError) {
+        toast.message("Cancelled.");
+      } else {
+        console.error(error);
+        toast.error(
+          error instanceof Error ? error.message : "Something went wrong while cutting the clip.",
+        );
+      }
     } finally {
       setBusy(false);
     }
