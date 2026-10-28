@@ -182,6 +182,9 @@ export function TrimTool({ file, fileUrl, duration }: Props) {
               <Loader2 className="h-4 w-4 animate-spin" /> Cutting clip… {Math.round(progress * 100)}%
             </div>
             <Progress value={progress * 100} />
+            <Button variant="secondary" className="w-full" onClick={() => abortFFmpeg()}>
+              Cancel
+            </Button>
           </div>
         )}
 
@@ -204,10 +207,17 @@ export function TrimTool({ file, fileUrl, duration }: Props) {
             </div>
           </div>
         ) : (
-          <Button className="w-full" size="lg" onClick={exportClip} disabled={busy || !valid}>
-            <Scissors className="h-4 w-4" />
-            {busy ? "Cutting…" : "Cut clip"}
-          </Button>
+          <>
+            {engineBusy && (
+              <p className="text-center text-xs text-muted-foreground">
+                The video engine is busy with another tool — try again in a moment.
+              </p>
+            )}
+            <Button className="w-full" size="lg" onClick={exportClip} disabled={busy || !valid || engineBusy}>
+              <Scissors className="h-4 w-4" />
+              {busy ? "Cutting…" : "Cut clip"}
+            </Button>
+          </>
         )}
       </div>
     </div>
