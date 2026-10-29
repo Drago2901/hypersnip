@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Download, Loader2, RefreshCcw, Scissors } from "lucide-react";
 import { toast } from "sonner";
 
