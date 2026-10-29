@@ -9,12 +9,16 @@ import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
 import { downloadFiles } from "@/lib/download";
 import {
+  abortFFmpeg,
   deleteTemp,
+  FFmpegCancelledError,
+  looksLikeMp4,
   readOutput,
   runFFmpeg,
   safeInputName,
   writeInputOnce,
 } from "@/lib/ffmpeg-client";
+import { useEngineBusy } from "@/hooks/use-engine-busy";
 import { HARD_MAX_SEGMENT } from "@/lib/hype/analysis-core";
 import type { WorkerRequest, WorkerResponse } from "@/lib/hype/protocol";
 import { formatTimecode } from "@/lib/format";
@@ -74,6 +78,7 @@ export function HypeTool({ file, fileUrl, duration }: Props) {
   const [result, setResult] = useState<{ url: string; blob: Blob; name: string } | null>(null);
 
   const inputName = safeInputName(file);
+  const engineBusy = useEngineBusy();
   const targetDuration =
     mode === "best" ? clamp(Math.round(bestDuration * 10) / 10, 3, HARD_MAX_SEGMENT) : montageTarget;
   const busy = stage === "extract" || stage === "analyze" || stage === "render";
@@ -232,10 +237,14 @@ export function HypeTool({ file, fileUrl, duration }: Props) {
         [samples.buffer],
       );
     } catch (error) {
-      console.error(error);
-      toast.error(
-        error instanceof Error ? error.message : "Something went wrong while reading the audio.",
-      );
+      if (error instanceof FFmpegCancelledError) {
+        toast.message("Cancelled.");
+      } else {
+        console.error(error);
+        toast.error(
+          error instanceof Error ? error.message : "Something went wrong while reading the audio.",
+        );
+      }
       setStage("idle");
       setProgress(0);
       setStatusText("");
@@ -247,7 +256,9 @@ export function HypeTool({ file, fileUrl, duration }: Props) {
     reqIdRef.current++;
     workerRef.current?.terminate();
     workerRef.current = null;
-    setStage("idle");
+    // Interrupt any in-flight FFmpeg job (audio extraction) too.
+    abortFFmpeg();
+    setStage(analysis ? "ready" : "idle");
     setProgress(0);
     setStatusText("");
   };
@@ -370,16 +381,25 @@ export function HypeTool({ file, fileUrl, duration }: Props) {
 
       tempNames.push(OUT_NAME);
       const data = await readOutput(OUT_NAME);
+      if (!looksLikeMp4(data)) {
+        throw new Error(
+          "The export came out damaged. Please try again — if it keeps happening, try a different file.",
+        );
+      }
       const blob = new Blob([data as unknown as BlobPart], { type: "video/mp4" });
       const base =
         file.name.replace(/\.[^.]+$/, "").replace(/[^\w-]+/g, "-").slice(0, 60) || "video";
       setResult({ url: URL.createObjectURL(blob), blob, name: `${base}-hype.mp4` });
       toast.success("Hype intro ready — download it below.");
     } catch (error) {
-      console.error(error);
-      toast.error(
-        error instanceof Error ? error.message : "Something went wrong while rendering.",
-      );
+      if (error instanceof FFmpegCancelledError) {
+        toast.message("Cancelled.");
+      } else {
+        console.error(error);
+        toast.error(
+          error instanceof Error ? error.message : "Something went wrong while rendering.",
+        );
+      }
     } finally {
       setStatusText("");
       setProgress(0);
@@ -417,9 +437,16 @@ export function HypeTool({ file, fileUrl, duration }: Props) {
           </p>
 
           {stage === "idle" && (
-            <Button className="mt-4 w-full" size="lg" onClick={analyze}>
-              <Zap className="h-4 w-4" /> Find the hype
-            </Button>
+            <>
+              {engineBusy && (
+                <p className="text-center text-xs text-muted-foreground">
+                  The video engine is busy with another tool — try again in a moment.
+                </p>
+              )}
+              <Button className="mt-4 w-full" size="lg" onClick={analyze} disabled={engineBusy}>
+                <Zap className="h-4 w-4" /> Find the hype
+              </Button>
+            </>
           )}
 
           {(stage === "extract" || stage === "analyze") && (
@@ -516,6 +543,9 @@ export function HypeTool({ file, fileUrl, duration }: Props) {
               <Loader2 className="h-4 w-4 animate-spin" /> {statusText} {Math.round(progress)}%
             </div>
             <Progress value={progress} />
+            <Button variant="secondary" className="w-full" onClick={cancel}>
+              Cancel
+            </Button>
           </div>
         )}
 
