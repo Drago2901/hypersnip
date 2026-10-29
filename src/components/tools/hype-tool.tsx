@@ -611,7 +611,7 @@ export function HypeTool({ file, fileUrl, duration }: Props) {
               Total:{" "}
               {formatTimecode(analysis.segments.reduce((sum, s) => sum + s.dur, 0))}
             </p>
-            <Button className="mt-3 w-full" size="lg" onClick={render} disabled={busy}>
+            <Button className="mt-3 w-full" size="lg" onClick={render} disabled={busy || engineBusy}>
               <Zap className="h-4 w-4" />
               {busy ? "Rendering…" : `Render ${mode === "best" ? "best moment" : "montage"}`}
             </Button>
