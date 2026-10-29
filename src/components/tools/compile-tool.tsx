@@ -157,7 +157,7 @@ export function CompileTool({ file, fileUrl, duration }: Props) {
                 className="timecode"
               />
             </label>
-            <Button className="mt-auto flex-1" variant="secondary" onClick={addSegment} disabled={busy}>
+            <Button className="mt-auto flex-1" variant="secondary" onClick={addSegment} disabled={busy || engineBusy}>
               <Plus className="h-4 w-4" /> Add from playhead
             </Button>
           </div>
@@ -243,10 +243,22 @@ export function CompileTool({ file, fileUrl, duration }: Props) {
             </div>
           </div>
         ) : (
-          <Button className="w-full" size="lg" onClick={compile} disabled={busy || segments.length === 0}>
-            <Layers className="h-4 w-4" />
-            {busy ? "Compiling…" : `Compile ${segments.length || ""} clip${segments.length === 1 ? "" : "s"}`}
-          </Button>
+          <>
+            {engineBusy && (
+              <p className="text-center text-xs text-muted-foreground">
+                The video engine is busy with another tool — try again in a moment.
+              </p>
+            )}
+            <Button
+              className="w-full"
+              size="lg"
+              onClick={compile}
+              disabled={busy || segments.length === 0 || engineBusy}
+            >
+              <Layers className="h-4 w-4" />
+              {busy ? "Compiling…" : `Compile ${segments.length || ""} clip${segments.length === 1 ? "" : "s"}`}
+            </Button>
+          </>
         )}
       </div>
     </div>
