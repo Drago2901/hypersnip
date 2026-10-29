@@ -8,13 +8,17 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { downloadFiles } from "@/lib/download";
 import {
+  abortFFmpeg,
   deleteTemp,
+  FFmpegCancelledError,
+  looksLikeMp4,
   readOutput,
   runFFmpeg,
   safeInputName,
   writeInputOnce,
 } from "@/lib/ffmpeg-client";
-import { formatDuration, formatTimecode } from "@/lib/format";
+import { useEngineBusy } from "@/hooks/use-engine-busy";
+import { formatDuration } from "@/lib/format";
 
 type Props = { file: File; fileUrl: string; duration: number | null };
 
@@ -35,6 +39,7 @@ export function CompileTool({ file, fileUrl, duration }: Props) {
   const [progress, setProgress] = useState(0);
   const [stage, setStage] = useState("");
   const [result, setResult] = useState<{ url: string; blob: Blob; name: string } | null>(null);
+  const engineBusy = useEngineBusy();
   const inputName = safeInputName(file);
 
   const totalTime = segments.reduce((sum, s) => sum + s.dur, 0);
@@ -99,21 +104,33 @@ export function CompileTool({ file, fileUrl, duration }: Props) {
       tempNames.push(outName);
       await runFFmpeg(["-f", "concat", "-safe", "0", "-i", "concat-list.txt", "-c", "copy", "-y", outName]);
       const data = await readOutput(outName);
+      if (!looksLikeMp4(data)) {
+        throw new Error(
+          "The export came out damaged. Please try again — if it keeps happening, try a different file.",
+        );
+      }
       const blob = new Blob([data as unknown as BlobPart], { type: "video/mp4" });
       const base = file.name.replace(/\.[^.]+$/, "").replace(/[^\w-]+/g, "-").slice(0, 60) || "video";
       setResult({ url: URL.createObjectURL(blob), blob, name: `${base}-compile.mp4` });
       toast.success("Compilation ready — download it below.");
     } catch (error) {
-      console.error(error);
-      toast.error(
-        error instanceof Error ? error.message : "Something went wrong while compiling.",
-      );
+      if (error instanceof FFmpegCancelledError) {
+        toast.message("Cancelled.");
+      } else {
+        console.error(error);
+        toast.error(
+          error instanceof Error ? error.message : "Something went wrong while compiling.",
+        );
+      }
     } finally {
       setBusy(false);
       setStage("");
       await deleteTemp(...tempNames, "concat-list.txt");
     }
   };
+
+  const cancel = () => abortFFmpeg();
+
 
   const clearResult = () => {
     if (result) URL.revokeObjectURL(result.url);
@@ -140,7 +157,7 @@ export function CompileTool({ file, fileUrl, duration }: Props) {
                 className="timecode"
               />
             </label>
-            <Button className="mt-auto flex-1" variant="secondary" onClick={addSegment} disabled={busy}>
+            <Button className="mt-auto flex-1" variant="secondary" onClick={addSegment} disabled={busy || engineBusy}>
               <Plus className="h-4 w-4" /> Add from playhead
             </Button>
           </div>
@@ -203,6 +220,9 @@ export function CompileTool({ file, fileUrl, duration }: Props) {
               <Loader2 className="h-4 w-4 animate-spin" /> {stage} {Math.round(progress * 100)}%
             </div>
             <Progress value={progress * 100} />
+            <Button variant="secondary" className="w-full" onClick={cancel}>
+              Cancel
+            </Button>
           </div>
         )}
 
@@ -223,14 +243,25 @@ export function CompileTool({ file, fileUrl, duration }: Props) {
             </div>
           </div>
         ) : (
-          <Button className="w-full" size="lg" onClick={compile} disabled={busy || segments.length === 0}>
-            <Layers className="h-4 w-4" />
-            {busy ? "Compiling…" : `Compile ${segments.length || ""} clip${segments.length === 1 ? "" : "s"}`}
-          </Button>
+          <>
+            {engineBusy && (
+              <p className="text-center text-xs text-muted-foreground">
+                The video engine is busy with another tool — try again in a moment.
+              </p>
+            )}
+            <Button
+              className="w-full"
+              size="lg"
+              onClick={compile}
+              disabled={busy || segments.length === 0 || engineBusy}
+            >
+              <Layers className="h-4 w-4" />
+              {busy ? "Compiling…" : `Compile ${segments.length || ""} clip${segments.length === 1 ? "" : "s"}`}
+            </Button>
+          </>
         )}
       </div>
     </div>
   );
 }
 
-void formatTimecode;
