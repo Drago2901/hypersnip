@@ -265,4 +265,3 @@ export function CompileTool({ file, fileUrl, duration }: Props) {
   );
 }
 
-void formatTimecode;
